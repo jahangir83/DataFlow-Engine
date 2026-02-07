@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DB Stream Viewer</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="header">
+      <h1>DB Stream Viewer</h1>
+      <div class="badge" id="status">Idle</div>
+    </header>
+
+    <main class="wrap">
+      <section class="panel">
+        <h2>Request</h2>
+
+        <label>
+          Query Key
+          <select id="queryKey">
+            <option value="SalesCampaignVariant">SalesCampaignVariant</option>
+            <option value="ProductVariant">ProductVariant</option>
+          </select>
+        </label>
+
+        <label id="campaignIdWrap">
+          campaignId
+          <input id="campaignId" placeholder="campaign id" />
+        </label>
+
+        <label id="productIdWrap" style="display: none">
+          productId
+          <input id="productId" placeholder="product id" />
+        </label>
+
+        <label>
+          limit (ProductVariant)
+          <input id="limit" type="number" value="1000" min="1" max="2000" />
+        </label>
+
+        <label>
+          Keep last lines
+          <input id="maxLines" type="number" value="5000" min="200" />
+        </label>
+
+        <div class="row">
+          <button id="start">Start</button>
+          <button id="stop" class="secondary">Stop</button>
+          <button id="clear" class="secondary">Clear</button>
+
+          <label class="inline">
+            <input id="autoScroll" type="checkbox" checked />
+            Auto scroll
+          </label>
+        </div>
+
+        <label>
+          Filter contains
+          <input id="filter" placeholder="filter text..." />
+        </label>
+
+        <div class="stats">
+          <div>Rows: <span id="rows">0</span></div>
+          <div>Bytes: <span id="bytes">0</span></div>
+        </div>
+
+        <a id="openRaw" target="_blank" rel="noreferrer">Open raw stream</a>
+      </section>
+
+      <section class="panel">
+        <h2>Live Log</h2>
+        <pre id="log" class="log"></pre>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

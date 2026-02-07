@@ -1,0 +1,54 @@
+<button id="start">Start</button>
+<button id="stop">Stop</button>
+
+<pre
+  id="log"
+  style="
+    height: 520px;
+    overflow: auto;
+    background: #111;
+    color: #0f0;
+    padding: 12px;
+  "
+></pre>
+
+<script>
+  let aborter;
+
+  function append(line) {
+    const el = document.getElementById("log");
+    el.textContent += line + "\n";
+    el.scrollTop = el.scrollHeight;
+  }
+
+  document.getElementById("start").onclick = async () => {
+    aborter = new AbortController();
+
+    const url =
+      "http://localhost:3000/export/stream?key=orders&from=2025-01-01&to=2026-01-01&limit=20000&mode=direct";
+    const res = await fetch(url, { signal: aborter.signal });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (line.trim()) append(line);
+      }
+    }
+
+    if (buffer.trim()) append(buffer);
+  };
+
+  document.getElementById("stop").onclick = () => {
+    if (aborter) aborter.abort();
+  };
+</script>
