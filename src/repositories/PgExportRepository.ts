@@ -15,7 +15,7 @@ export class PgExportRepository {
         exportQuery.sql,
         exportQuery.params ?? [],
         {
-          highWaterMark: 1000, // Adjust the batch size as needed
+          highWaterMark: 1, // Adjust the batch size as needed
         },
       );
       const stream = client.query(queryStream);
@@ -23,6 +23,24 @@ export class PgExportRepository {
     } catch (err) {
       client.release();
       throw err;
+    }
+  }
+
+  async debugQuery(
+    exportQuery: SqlStatement,
+  ): Promise<{ rows: number; sample: any }> {
+    const client = await pgPool.connect();
+    try {
+      const { rows } = await client.query({
+        text: exportQuery.sql,
+        values: exportQuery.params ?? [],
+      });
+      return {
+        rows: rows.length,
+        sample: rows[0] || null,
+      };
+    } finally {
+      client.release();
     }
   }
 }

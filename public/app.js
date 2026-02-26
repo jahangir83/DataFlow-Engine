@@ -12,6 +12,7 @@ const maxLinesEl = $("maxLines");
 const filterEl = $("filter");
 const autoScrollEl = $("autoScroll");
 const openRawEl = $("openRaw");
+const mode = $("mode");
 
 const campaignIdWrap = $("campaignIdWrap");
 const productIdWrap = $("productIdWrap");
@@ -41,6 +42,7 @@ function uiToggle() {
 
 function buildUrl() {
   const key = queryKeyEl.value;
+  const modeValue = mode.value;
   const params = new URLSearchParams();
   params.set("queryKey", key);
 
@@ -49,6 +51,7 @@ function buildUrl() {
   } else {
     params.set("productId", productIdEl.value || "");
     params.set("limit", String(limitEl.value || "1000"));
+    params.set("mode", modeValue);
   }
 
   return `/export/stream?${params.toString()}`;
@@ -64,7 +67,20 @@ function render() {
     ? ring.filter((x) => x.toLowerCase().includes(filter))
     : ring;
 
-  logEl.textContent = view.join("\n") + (view.length ? "\n" : "");
+  // Parse and render event lines with prefixes
+  const lines = view.map((line) => {
+    try {
+      const obj = JSON.parse(line);
+      if (obj && obj.event) {
+        if (obj.event === "start") return `[START] Query: ${obj.queryKey}`;
+        if (obj.event === "empty") return `[EMPTY] No rows found`;
+        if (obj.event === "end") return `[END] Rows: ${obj.rows}`;
+      }
+    } catch {}
+    return line;
+  });
+
+  logEl.textContent = lines.join("\n") + (lines.length ? "\n" : "");
 
   if (autoScrollEl.checked) {
     logEl.scrollTop = logEl.scrollHeight;
@@ -87,6 +103,7 @@ function pushLine(line) {
 }
 
 async function start() {
+  debugger;
   stop();
   updateRawLink();
 
@@ -105,7 +122,7 @@ async function start() {
     }
 
     setStatus("Streaming");
-
+    debugger;
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
@@ -124,8 +141,24 @@ async function start() {
       for (const line of lines) {
         const t = line.trim();
         if (!t) continue;
-        rows += 1;
-        rowsEl.textContent = String(rows);
+        // Parse event lines for row count and empty event
+        let isEvent = false;
+        try {
+          const obj = JSON.parse(t);
+          if (obj && obj.event) {
+            isEvent = true;
+            if (obj.event === "end" && typeof obj.rows === "number") {
+              rowsEl.textContent = String(obj.rows);
+            }
+            if (obj.event === "empty") {
+              // Show 'No rows found' in log (handled in render)
+            }
+          }
+        } catch {}
+        if (!isEvent) {
+          rows += 1;
+          rowsEl.textContent = String(rows);
+        }
         pushLine(t);
       }
 

@@ -25,6 +25,13 @@ export function buildRoutes() {
     }),
   );
 
+  router.get(
+    "/export/debug",
+    asyncHandler(async (req, res) => {
+      await service.debug(req, res);
+    }),
+  );
+
   router.get("/jahangir", async (req, res) => {
     const client = await pgPool.connect();
 

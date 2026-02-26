@@ -1,22 +1,19 @@
+import { createHash } from "crypto";
 import { ExportQueryKey } from "../domain/ExportQueryKey";
 import { DirectDbStrategy } from "../strategies/DirectDbStrategy";
 import { FileCacheStrategy } from "../strategies/FileCacheStrategy";
-import type { Request, Response } from "express";
 import { buildExportStatement } from "./exportQueries";
-import { createHash } from "crypto";
-
-function makeCacheKey(key: string, query: any) {
-  const raw = JSON.stringify({ key, query });
-  return createHash("sha1").update(raw).digest("hex");
-}
 
 export class ExportService {
   constructor(
-    private direct: DirectDbStrategy,
-    private fileCache: FileCacheStrategy,
+    public direct: DirectDbStrategy,
+    public fileCache: FileCacheStrategy,
   ) {}
 
-  async stream(req: Request, res: Response) {
+  async stream(
+    req: import("express").Request,
+    res: import("express").Response,
+  ) {
     try {
       const queryKey = String(req.query.queryKey || "") as ExportQueryKey;
       if (!queryKey) {
@@ -43,4 +40,36 @@ export class ExportService {
       res.status(400).json({ error: e?.message || "Bad request" });
     }
   }
+
+  async debug(req: import("express").Request, res: import("express").Response) {
+    try {
+      const queryKey = String(req.query.queryKey || "") as ExportQueryKey;
+      if (!queryKey) {
+        res.status(400).json({ error: "Missing export query key" });
+        return;
+      }
+      const params = req.query;
+      const stmt = buildExportStatement(queryKey, params);
+      // Log SQL and params
+      console.log("[DEBUG] SQL:", stmt.sql);
+      console.log("[DEBUG] Params:", params);
+
+      // Use repo to fetch sample row and count
+      const repo = this.direct.repo;
+      const { rows, sample } = await repo.debugQuery(stmt);
+      res.json({
+        queryKey,
+        params,
+        rowsFound: rows,
+        sample: sample || null,
+      });
+    } catch (e: any) {
+      res.status(400).json({ error: e?.message || "Bad request" });
+    }
+  }
+}
+
+function makeCacheKey(key: string, query: any) {
+  const raw = JSON.stringify({ key, query });
+  return createHash("sha1").update(raw).digest("hex");
 }

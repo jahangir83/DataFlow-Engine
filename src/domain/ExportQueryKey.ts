@@ -1,1 +1,5 @@
-export type ExportQueryKey = "SalesCampaignVariant" | "ProductVariant";
+export type ExportQueryKey =
+  | "SalesCampaignVariant"
+  | "ProductVariant"
+  | "Customer"
+  | "Order";

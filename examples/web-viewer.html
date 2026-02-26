@@ -28,6 +28,7 @@
       "http://localhost:3000/export/stream?key=orders&from=2025-01-01&to=2026-01-01&limit=20000&mode=direct";
     const res = await fetch(url, { signal: aborter.signal });
 
+    debugger;
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
